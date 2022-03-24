@@ -68,7 +68,7 @@ def _history(querydate=datetime.today().date().strftime("%Y/%m/%d")):
 @app.route("/log", methods=["POST"])
 def _log(*args, **kwargs):
     data = request.get_json(force=True)
-    app.logger.debug(str(data))
+    app.logger.debug(f"/log -> {str(data)}")
 
     hygro = int(_or(data, 'hygro', 0))
     buoy = int(_or(data, 'buoy', 0))
@@ -82,6 +82,30 @@ def _log(*args, **kwargs):
         # con.commit()
     except Exception as e:
         app.logger.warning(f"Failed to save entry ('{datetime.now().strftime('%d/%b/%Y %H:%M:%S')}',{hygro},{buoy}) : " + str(e))
+    return "Success: {}".format(200)
+
+@app.route("/getConfig/<device_id>")
+def _get_config(device_id):
+    db = TinyDB('db/demeter.json', sort_keys=True, storage=serialization)
+    table = db.table('config')#, cache_size=24*60/10)
+    tabledata = table.search(where('device_id') == device_id)
+    db.close()
+
+    app.logger.debug(f'tabledata={tabledata}')
+    return str(tabledata)
+
+@app.route("/setConfig/<device_id>", methods=["POST"])
+def _get_config(device_id):
+    data = request.get_json(force=True)
+    app.logger.debug(f"/setConfig -> {str(data)}")
+
+    data['device_id'] = device_id
+
+    db = TinyDB('db/demeter.json', sort_keys=True, storage=serialization)
+    table = db.table('config')#, cache_size=24*60/10)
+    table.upsert(data, where('device_id') == device_id)
+    db.close()
+
     return "Success: {}".format(200)
 
 if __name__ == '__main__':
