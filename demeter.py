@@ -95,7 +95,7 @@ def _get_config(device_id):
     return str(tabledata)
 
 @app.route("/setConfig/<device_id>", methods=["POST"])
-def _get_config(device_id):
+def _set_config(device_id):
     data = request.get_json(force=True)
     app.logger.debug(f"/setConfig -> {str(data)}")
 
