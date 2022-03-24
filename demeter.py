@@ -89,10 +89,18 @@ def _get_config(device_id):
     db = TinyDB('db/demeter.json', sort_keys=True, storage=serialization)
     table = db.table('config')#, cache_size=24*60/10)
     tabledata = table.search(where('device_id') == device_id)
-    db.close()
 
     app.logger.debug(f'tabledata={tabledata}')
-    return str(tabledata)
+
+    if tabledata is not None and len(tabledata) > 0:
+        db.close()
+        return str(tabledata[0])
+    
+    app.logger.warning(f'Fetching default config ({device_id} not found)')
+
+    tabledata = table.search(where('device_id') == 'default')
+    db.close()
+    return str(tabledata[0])
 
 @app.route("/setConfig/<device_id>", methods=["POST"])
 def _set_config(device_id):
