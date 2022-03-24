@@ -94,12 +94,14 @@ def _get_config(device_id):
 
     if tabledata is not None and len(tabledata) > 0:
         db.close()
+        del(tabledata[0]['device_id'])
         return str(tabledata[0])
     
     app.logger.warning(f'Fetching default config ({device_id} not found)')
 
     tabledata = table.search(where('device_id') == 'default')
     db.close()
+    del(tabledata[0]['device_id'])
     return str(tabledata[0])
 
 @app.route("/setConfig/<device_id>", methods=["POST"])
