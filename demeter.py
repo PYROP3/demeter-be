@@ -34,10 +34,10 @@ def tag_time(msg):
 
 @app.route("/")
 def _index():
-    return redirect(url_for('_history', querydate=datetime.today().date().strftime("%Y/%m/%d")))
+    return redirect(url_for('_daily', querydate=datetime.today().date().strftime("%Y/%m/%d")))
 
-@app.route("/history/<path:querydate>")
-def _history(querydate=datetime.today().date().strftime("%Y/%m/%d")):
+@app.route("/daily/<path:querydate>")
+def _daily(querydate=datetime.today().date().strftime("%Y/%m/%d")):
     app.logger.debug(f'querydate={querydate}')
     
     _date = datetime.strptime(querydate, "%Y/%m/%d").date()
@@ -57,9 +57,39 @@ def _history(querydate=datetime.today().date().strftime("%Y/%m/%d")):
     fig.update_layout(yaxis_range=[0,100])
 
     graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    header=f"Detected moisture on {str(_date)}"
+    header=f"Measured soil moisture on {str(_date)}"
     description = f"""
-    Measured moisture levels on {str(_date)}
+    Measured soil moisture levels on {str(_date)}
+    """
+    return render_template('index.html', graphJSON=graphJSON, header=header,description=description,
+                           prevDay=(_date - timedelta(days=1)).strftime("%Y/%m/%d"),
+                           nextDay=(_date + timedelta(days=1)).strftime("%Y/%m/%d"))
+
+@app.route("/history/<path:querydate_start>/to/<path:querydate_end>")
+def _history(querydate_start=datetime.today().date().strftime("%Y/%m/%d"), querydate_end=datetime.today().date().strftime("%Y/%m/%d")):
+    app.logger.debug(f'querydate={querydate_start}')
+    
+    _date_start = datetime.strptime(querydate_start, "%Y/%m/%d").date()
+    _date_end = datetime.strptime(querydate_end, "%Y/%m/%d").date()
+    table = TinyDB('db/demeter.json', sort_keys=True, storage=serialization).table('hygro')#, cache_size=24*60/10)
+    # app.logger.debug(f'table.all={table.all()}')
+    
+    tabledata = [row for row in table.all() if row['timestamp'].date() >= _date_start and row['timestamp'].date() <= _date_end]
+    # TODO tabledata = table.search(where('timestamp').date == today)
+    # app.logger.debug(f'tabledata={tabledata}')
+
+    df = pd.DataFrame({
+        "Time": [data['timestamp'] for data in tabledata],
+        "Moisture": [data['hygro'] for data in tabledata]
+    })
+
+    fig = px.line(df.sort_values(by="Time"), x="Time", y="Moisture", markers=True)
+    fig.update_layout(yaxis_range=[0,100])
+
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    header=f"Measured soil moisture from {str(_date_start)} to {str(_date_end)}"
+    description = f"""
+    Measured soil moisture levels from {str(_date_start)} to {str(_date_end)}
     """
     return render_template('index.html', graphJSON=graphJSON, header=header,description=description,
                            prevDay=(_date - timedelta(days=1)).strftime("%Y/%m/%d"),
@@ -78,8 +108,6 @@ def _log(*args, **kwargs):
         table = db.table('hygro')#, cache_size=24*60/10)
         table.insert({'timestamp': datetime.now(), 'hygro': hygro, 'buoy': buoy})
         db.close()
-        # cur.execute("INSERT INTO hygro VALUES (?, ?, ?)", (datetime.now(), hygro, buoy))
-        # con.commit()
     except Exception as e:
         app.logger.warning(f"Failed to save entry ('{datetime.now().strftime('%d/%b/%Y %H:%M:%S')}',{hygro},{buoy}) : " + str(e))
     return "Success: {}".format(200)
