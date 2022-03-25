@@ -65,7 +65,7 @@ def _daily(querydate=datetime.today().date().strftime("%Y/%m/%d")):
                            prevDay=(_date - timedelta(days=1)).strftime("%Y/%m/%d"),
                            nextDay=(_date + timedelta(days=1)).strftime("%Y/%m/%d"))
 
-@app.route("/history/<path:querydate_start>/to/<path:querydate_end>")
+@app.route("/history/from/<path:querydate_start>/to/<path:querydate_end>")
 def _history(querydate_start=datetime.today().date().strftime("%Y/%m/%d"), querydate_end=datetime.today().date().strftime("%Y/%m/%d")):
     app.logger.debug(f'querydate={querydate_start}')
     
@@ -92,7 +92,7 @@ def _history(querydate_start=datetime.today().date().strftime("%Y/%m/%d"), query
     Measured soil moisture levels from {str(_date_start)} to {str(_date_end)}
     """
 
-    _date = datetime.strptime(querydate, "%Y/%m/%d").date()
+    _date = datetime.today()
     return render_template('index.html', graphJSON=graphJSON, header=header, description=description,
                            prevDay=(_date - timedelta(days=1)).strftime("%Y/%m/%d"),
                            nextDay=(_date + timedelta(days=1)).strftime("%Y/%m/%d"))
