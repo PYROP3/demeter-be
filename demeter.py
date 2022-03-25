@@ -61,7 +61,7 @@ def _daily(querydate=datetime.today().date().strftime("%Y/%m/%d")):
     description = f"""
     Measured soil moisture levels on {str(_date)}
     """
-    return render_template('index.html', graphJSON=graphJSON, header=header,description=description,
+    return render_template('index.html', graphJSON=graphJSON, header=header, description=description,
                            prevDay=(_date - timedelta(days=1)).strftime("%Y/%m/%d"),
                            nextDay=(_date + timedelta(days=1)).strftime("%Y/%m/%d"))
 
@@ -91,7 +91,9 @@ def _history(querydate_start=datetime.today().date().strftime("%Y/%m/%d"), query
     description = f"""
     Measured soil moisture levels from {str(_date_start)} to {str(_date_end)}
     """
-    return render_template('index.html', graphJSON=graphJSON, header=header,description=description,
+
+    _date = datetime.strptime(querydate, "%Y/%m/%d").date()
+    return render_template('index.html', graphJSON=graphJSON, header=header, description=description,
                            prevDay=(_date - timedelta(days=1)).strftime("%Y/%m/%d"),
                            nextDay=(_date + timedelta(days=1)).strftime("%Y/%m/%d"))
 
